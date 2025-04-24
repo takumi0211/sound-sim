@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音響シミュレーション</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2d3436;
+            --secondary-color: #0984e3;
+            --background-color: #f8f9fa;
+            --card-background: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--background-color), #dfe6e9);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 1600px !important;
+            margin: 30px auto;
+            padding: 0 15px;
+            text-align: center;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .form-wrapper, .result-wrapper {
+            flex: 1;
+            min-width: 300px;
+            max-width: 750px;
+        }
+
+        .form-wrapper {
+            position: sticky;
+            top: 30px;
+            align-self: flex-start;
+        }
+
+        .header {
+            text-align: center;
+            width: 60%;
+            background: var(--card-background);
+            padding: 20px;  /* 30pxから20pxに変更 */
+            border-radius: 15px;
+            margin: 0 auto 20px auto;  /* 上下のmarginもここで設定 */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.8rem;  /* 2.2remから1.8remに変更 */
+            font-weight: 600;
+        }
+
+        .form-section {
+            background: var(--card-background);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .form-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .form-section h3 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .form-label {
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-select, .form-control {
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(9, 132, 227, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: block;
+            margin: 20px auto 0;
+        }
+
+        .btn-primary:hover {
+            background-color: #0073e6;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(9, 132, 227, 0.3);
+        }
+
+        .form-section .row {
+            margin-bottom: 0;
+        }
+
+        .form-section .col-md-6 {
+            margin-bottom: 20px;
+        }
+
+        #spinner {
+            width: 100%;
+            margin: 30px 0;
+            padding: 20px;
+            border-radius: 15px;
+            background: var(--card-background);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner-border {
+            color: var(--secondary-color);
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* アニメーション効果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-section, .result-section {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* レスポンシブデザインの改善 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .form-section, .result-section {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        .result-wrapper {
+            width: 100%;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .result-section {
+            width: 100%;
+            margin: 30px auto;
+            background: var(--card-background);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .result-graph {
+            width: 100%;
+            max-width: 700px;
+            margin: 25px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .table-responsive {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .table {
+            width: 100%;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 12px 15px;
+        }
+
+        .table th {
+            background: var(--background-color);
+            color: var(--primary-color);
+            font-weight: 600;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .table tr:hover {
+            background-color: rgba(9, 132, 227, 0.05);
+        }
+
+        .result-graph {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px auto;
+            max-width: 700px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        #resultChart, #aWeightingChart {
+            max-width: 100%;
+            height: auto;
+            margin: 15px auto;
+            display: block;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        @media (max-width: 1200px) {
+            .form-wrapper, .result-wrapper {
+                max-width: 100%;
+            }
+            
+            .form-wrapper {
+                position: static;
+            }
+        }
+
+        .diagram-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            background: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .diagram-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .play-button {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .play-button:hover {
+            background-color: #0056b3;
+        }
+        .play-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="header">
+            <h1 class="mb-4">音響シミュレーション</h1>
+        </div>
+        <div class="diagram-container">
+            <img src="{{ url_for('static', filename='static/image/diagram.jpg') }}" alt="音響シミュレーション図" class="img-fluid mb-4">
+        </div>
+        <div class="content-wrapper">
+            <div class="form-wrapper">
+                <form id="acousticForm" class="needs-validation" novalidate>
+                    <div class="form-section">
+                        <h3>基本パラメータ</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="frequency" class="form-label">周波数 (Hz)</label>
+                                <select class="form-select" id="frequency" name="frequency" required>
+                                    <option value="125" selected>125 Hz</option>
+                                    <option value="250">250 Hz</option>
+                                    <option value="500">500 Hz</option>
+                                    <option value="1000">1000 Hz</option>
+                                    <option value="2000">2000 Hz</option>
+                                    <option value="4000">4000 Hz</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="power_level" class="form-label">音源パワーレベル (dB)</label>
+                                <input type="number" class="form-control" id="power_level" name="power_level" value="90" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>天井材料</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ceiling_material" class="form-label">材料</label>
+                                <select class="form-select" id="ceiling_material" name="ceiling_material" required>
+                                    <option value="グラスウール" selected>グラスウール</option>
+                                    <option value="ロックウール">ロックウール</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ceiling_density" class="form-label">密度</label>
+                                <select class="form-select" id="ceiling_density" name="ceiling_density" disabled required>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ceiling_thickness" class="form-label">厚さ (mm)</label>
+                                <select class="form-select" id="ceiling_thickness" name="ceiling_thickness" disabled required>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ceiling_air_layer" class="form-label">空気層 (mm)</label>
+                                <select class="form-select" id="ceiling_air_layer" name="ceiling_air_layer" disabled required>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>パネル材料</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="panel_material" class="form-label">材料</label>
+                                <select class="form-select" id="panel_material" name="panel_material" required>
+                                    <option value="グラスウール" selected>グラスウール</option>
+                                    <option value="ロックウール">ロックウール</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="panel_density" class="form-label">密度</label>
+                                <select class="form-select" id="panel_density" name="panel_density" disabled required>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="panel_thickness" class="form-label">厚さ (mm)</label>
+                                <select class="form-select" id="panel_thickness" name="panel_thickness" disabled required>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="panel_air_layer" class="form-label">空気層 (mm)</label>
+                                <select class="form-select" id="panel_air_layer" name="panel_air_layer" disabled required>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="absorption_area" class="form-label">パネル設置面積 (m²)</label>
+                                <input type="number" class="form-control" id="absorption_area" name="absorption_area" value="10" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>壁パラメータ</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="wall_thickness" class="form-label">隣接壁の厚さ (mm)</label>
+                                <select class="form-select" id="wall_thickness" name="wall_thickness" required>
+                                    <option value="120" selected>120 mm</option>
+                                    <option value="150">150 mm</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="door_open" class="form-label">ドアの状態</label>
+                                <select class="form-select" id="door_open" name="door_open">
+                                    <option value="false" selected>閉</option>
+                                    <option value="true">開</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">計算実行</button>
+                </form>
+
+                <div id="spinner" class="text-center mt-4 d-none">
+                    <div class="spinner-border" role="status"></div>
+                        <span class="visually-hidden">計算中...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-wrapper">
+                <div id="resultSection" class="result-section d-none">
+                    <h3>計算結果</h3>
+                    
+                    <!-- 計算結果の表 -->
+                    <div class="result-graph">
+                        <h4 class="text-center">計算パラメータ</h4>
+                        <div class="table-responsive">
+                            <table class="table mx-auto">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">項目</th>
+                                        <th class="text-center">値</th>
+                                        <th class="text-center">音声</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- グラフセクション -->
+                    <div class="result-graph">
+                        <h4 class="text-center">等ラウドネス曲線</h4>
+                        <div class="chart-container text-center">
+                            <img id="resultChart" alt="等ラウドネス曲線" class="mx-auto d-block">
+                        </div>
+                    </div>
+                    
+                    <div class="result-graph">
+                        <h4 class="text-center">A特性カーブ</h4>
+                        <div class="chart-container text-center">
+                            <img id="aWeightingChart" alt="A特性カーブ" class="mx-auto d-block">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const absorptionData = {
+            'グラスウール': {
+                '16-24': {
+                    '25': [0, 40, 100, 300],
+                    '50': [0, 40, 100, 300],
+                    '100': [0]
+                },
+                '32-48': {
+                    '25': [0, 40, 100],
+                    '50': [0, 40]
+                },
+                '32-40': {
+                    '100': [0, 40, 100]
+                }
+            },
+            'ロックウール': {
+                '40-140': {
+                    '25': [0, 40, 100, 300],
+                    '50': [0, 40, 100, 300]
+                }
+            }
+        };
+
+        // 初期値の設定
+        function setInitialValues() {
+            ['ceiling', 'panel'].forEach(prefix => {
+                const material = document.getElementById(prefix + '_material').value;
+                updateSelects(material, prefix);
+                
+                // 密度の初期値を設定
+                const densitySelect = document.getElementById(prefix + '_density');
+                densitySelect.value = Object.keys(absorptionData[material])[0];
+                
+                // 厚さの初期値を設定
+                const thickness = Object.keys(absorptionData[material][densitySelect.value])[0];
+                updateThickness(material, densitySelect.value, prefix);
+                const thicknessSelect = document.getElementById(prefix + '_thickness');
+                thicknessSelect.value = thickness;
+                
+                // 空気層の初期値を設定
+                updateAirLayer(material, densitySelect.value, thickness, prefix);
+                const airLayerSelect = document.getElementById(prefix + '_air_layer');
+                airLayerSelect.value = absorptionData[material][densitySelect.value][thickness][0];
+            });
+        }
+
+        // ページ読み込み時に初期値を設定
+        window.addEventListener('load', setInitialValues);
+
+        function updateSelects(material, prefix) {
+            const densitySelect = document.getElementById(prefix + '_density');
+            const thicknessSelect = document.getElementById(prefix + '_thickness');
+            const airLayerSelect = document.getElementById(prefix + '_air_layer');
+            
+            // Reset and disable all dependent selects
+            [densitySelect, thicknessSelect, airLayerSelect].forEach(select => {
+                select.innerHTML = '<option value="">選択してください</option>';
+                select.disabled = true;
+            });
+
+            if (material) {
+                // Enable and populate density select
+                densitySelect.disabled = false;
+                Object.keys(absorptionData[material]).forEach(density => {
+                    const option = new Option(density, density);
+                    densitySelect.add(option);
+                });
+            }
+        }
+
+        function updateThickness(material, density, prefix) {
+            const thicknessSelect = document.getElementById(prefix + '_thickness');
+            const airLayerSelect = document.getElementById(prefix + '_air_layer');
+            
+            [thicknessSelect, airLayerSelect].forEach(select => {
+                select.innerHTML = '<option value="">選択してください</option>';
+                select.disabled = true;
+            });
+
+            if (density) {
+                thicknessSelect.disabled = false;
+                Object.keys(absorptionData[material][density]).forEach(thickness => {
+                    const option = new Option(thickness + ' mm', thickness);
+                    thicknessSelect.add(option);
+                });
+            }
+        }
+
+        function updateAirLayer(material, density, thickness, prefix) {
+            const airLayerSelect = document.getElementById(prefix + '_air_layer');
+            airLayerSelect.innerHTML = '<option value="">選択してください</option>';
+            airLayerSelect.disabled = true;
+
+            if (thickness) {
+                airLayerSelect.disabled = false;
+                absorptionData[material][density][thickness].forEach(airLayer => {
+                    const option = new Option(airLayer + ' mm', airLayer);
+                    airLayerSelect.add(option);
+                });
+            }
+        }
+
+        // Add event listeners for material selects
+        ['ceiling', 'panel'].forEach(prefix => {
+            document.getElementById(prefix + '_material').addEventListener('change', function() {
+                updateSelects(this.value, prefix);
+            });
+
+            document.getElementById(prefix + '_density').addEventListener('change', function() {
+                const material = document.getElementById(prefix + '_material').value;
+                updateThickness(material, this.value, prefix);
+            });
+
+            document.getElementById(prefix + '_thickness').addEventListener('change', function() {
+                const material = document.getElementById(prefix + '_material').value;
+                const density = document.getElementById(prefix + '_density').value;
+                updateAirLayer(material, density, this.value, prefix);
+            });
+        });
+
+        document.getElementById('acousticForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            document.getElementById('spinner').classList.remove('d-none');
+            document.getElementById('resultSection').classList.add('d-none');
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 結果をテーブルに表示
+                    const resultTable = document.getElementById('resultTable');
+                    resultTable.innerHTML = '';
+                    
+                    // 周波数を保存
+                    const currentFrequency = document.getElementById('frequency').value;
+                    
+                    // 表示順序を指定
+                    const displayOrder = [
+                        '音源の音圧レベル',
+                        '音源室の音圧レベル',
+                        '受音室の音圧レベル',
+                        '受音室のA特性騒音レベル',
+                        '吸音力',
+                        '遮音損失'
+                    ];
+
+                    // 指定された順序で結果を表示
+                    displayOrder.forEach(key => {
+                        if (key in result.data) {
+                            const row = resultTable.insertRow();
+                            row.insertCell(0).textContent = key;
+                            row.insertCell(1).textContent = result.data[key];
+                            
+                            // 音圧レベルの項目にのみ再生ボタンを表示
+                            if (['音源の音圧レベル', '音源室の音圧レベル', '受音室の音圧レベル'].includes(key)) {
+                                const playButtonCell = row.insertCell(2);
+                                const playButton = document.createElement('button');
+                                playButton.textContent = '再生';
+                                playButton.className = 'play-button';
+                                playButton.onclick = () => playSound(key, currentFrequency, result.data[key]);
+                                playButtonCell.appendChild(playButton);
+                            } else {
+                                // その他の項目は空のセルを追加
+                                row.insertCell(2);
+                            }
+                        }
+                    });
+
+                    // グラフを表示
+                    const resultChart = document.getElementById('resultChart');
+                    const aWeightingChart = document.getElementById('aWeightingChart');
+                    resultChart.src = result.chartUrl;
+                    aWeightingChart.src = result.aWeightingUrl;
+
+                    document.getElementById('resultSection').classList.remove('d-none');
+                } else {
+                    alert('計算中にエラーが発生しました: ' + result.error);
+                }
+            } catch (error) {
+                alert('エラーが発生しました: ' + error);
+            } finally {
+                document.getElementById('spinner').classList.add('d-none');
+            }
+        });
+
+        async function playSound(type, frequency, db) {
+            const button = event.target;
+            button.disabled = true;
+            
+            await fetch('/play-sound', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ type, frequency, db })
+            });
+            
+            button.disabled = false;
+        }
+    </script>
+</body>
+</html>
