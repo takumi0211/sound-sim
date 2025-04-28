@@ -22,7 +22,7 @@
 
 1. リポジトリをクローン
 ```bash
-git clone [repository-url]
+git clone https://github.com/takumi0211/sound-sim.git
 ```
 
 2. 必要なパッケージのインストール
